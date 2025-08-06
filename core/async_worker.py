@@ -7,9 +7,11 @@ class AsyncWorker(QThread):
     response_ready = pyqtSignal(str)  # 响应准备信号
     error_occurred = pyqtSignal(str)   # 错误信号
     
-    def __init__(self, ai_core):
+    def __init__(self, ai_core, base_prompt):
         super().__init__()
         self.ai_core = ai_core
+        self.base_prompt = base_prompt
+        self.conversation_history = []
         self.query = ""
         self.is_running = False
         
@@ -20,19 +22,33 @@ class AsyncWorker(QThread):
         """设置要处理的查询"""
         self.query = query
     
+    def add_to_history(self, role: str, content: str):
+        """添加消息到对话历史"""
+        self.conversation_history.append({"role": role, "content": content})
+    
+    def get_full_messages(self):
+        """获取完整的对话消息列表"""
+        messages = [{"role": "system", "content": self.base_prompt}]
+        messages.extend(self.conversation_history)
+        messages.append({"role": "user", "content": self.query})
+        return messages
+    
     def run(self):
         """线程主函数"""
         if not self.query:
             return
             
         try:
+            # 获取完整的对话历史
+            messages = self.get_full_messages()
+            
             # 创建新的事件循环
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
             # 运行异步任务
             response = loop.run_until_complete(
-                self.ai_core.generate_response(self.query)
+                self.ai_core.generate_response(messages)
             )
             
             # 发送最终响应
