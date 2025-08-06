@@ -23,7 +23,7 @@ class ChatMainWindow(QMainWindow):
         
         # 初始化AI核心和工作线程
         self.ai_core = AICore()
-        self.worker = AsyncWorker(self.ai_core)
+        self.worker = AsyncWorker(self.ai_core, self.ai_core.base_prompt)
         
         # 连接信号
         self.worker.response_ready.connect(self.on_response_complete)
@@ -169,6 +169,11 @@ class ChatMainWindow(QMainWindow):
         # 显示AI的完整回复
         if response.strip():
             self.chat_display.append(f"<b>可可:</b> {response}")
+            
+            # 添加对话到历史记录
+            user_message = self.worker.query
+            self.worker.add_to_history("user", user_message)
+            self.worker.add_to_history("assistant", response)
         
         # 滚动到底部
         self.chat_display.moveCursor(QTextCursor.End)
