@@ -63,15 +63,12 @@ class AICore(QObject):
 请始终以{self.character['name']}的身份和语气与用户对话，不要暴露你是AI助手。
 """.strip()
     
-    async def generate_response(self, query: str) -> str:
+    async def generate_response(self, messages: list) -> str:
         try:
             # 使用非流式输出，一次性获取完整响应
             response = await self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": self.base_prompt},
-                    {"role": "user", "content": query}
-                ],
+                messages=messages,
                 temperature=0.7,
                 stream=False  # 改为非流式输出
             )
